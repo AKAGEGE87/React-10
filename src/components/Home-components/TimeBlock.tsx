@@ -1,13 +1,42 @@
 import { useState, useEffect } from "react";
 
-export default function TimeBlock() {
-  const [time, setTime] = useState({
-    days: 8,
-    hours: 23,
-    minutes: 55,
-    seconds: 41
-  });
+// მიზნობრივი თარიღი: 2025 წლის 31 დეკემბერი, 23:59:59 (თვეები იწყება 0-დან, დეკემბერი = 11)
+const targetDate = new Date(2025, 11, 31, 23, 59, 59).getTime();
 
+const calculateTimeLeft = () => {
+  const now = new Date().getTime();
+  const difference = targetDate - now;
+
+  // თუ სხვაობა 0-ზე ნაკლებია, ეს ნიშნავს, რომ დრო გავიდა.
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  // დროის ერთეულების გამოთვლა მილიწამებიდან
+  const seconds = Math.floor((difference / 1000) % 60);
+  const minutes = Math.floor((difference / 1000 / 60) % 60);
+  const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+  const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+
+  return { days, hours, minutes, seconds };
+};
+
+export default function TimeBlock() {
+  // useState-ში ვიყენებთ ახალ გამომთვლელ ფუნქციას
+  const [time, setTime] = useState(calculateTimeLeft());
+
+  // --- useEffect ლოგიკა ---
+  useEffect(() => {
+    // ყოველ 1000 მილიწამში (1 წამში) განვაახლებთ დროს
+    const timer = setInterval(() => {
+      setTime(calculateTimeLeft());
+    }, 1000);
+
+    // გაწმენდის ფუნქცია (Cleanup function)
+    return () => clearInterval(timer);
+  }, []); // ცარიელი მასივი ნიშნავს, რომ მხოლოდ ერთხელ გაეშვას კომპონენტის ჩატვირთვისას.
+
+  // --- დანარჩენი კოდი უცვლელია (სოციალური ქსელების იკონები, TimeBox კომპონენტი და რენდერი) ---
   const socIcons = [
     {
       icon: (
@@ -56,8 +85,8 @@ export default function TimeBlock() {
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
+            fillRule="evenodd"
+            clipRule="evenodd"
             d="M12 0C8.741 0 8.333 0.014 7.053 0.072C2.695 0.272 0.273 2.69 0.073 7.052C0.014 8.333 0 8.741 0 12C0 15.259 0.014 15.668 0.072 16.948C0.272 21.306 2.69 23.728 7.052 23.928C8.333 23.986 8.741 24 12 24C15.259 24 15.668 23.986 16.948 23.928C21.302 23.728 23.73 21.31 23.927 16.948C23.986 15.668 24 15.259 24 12C24 8.741 23.986 8.333 23.928 7.053C23.732 2.699 21.311 0.273 16.949 0.073C15.668 0.014 15.259 0 12 0ZM12 2.163C15.204 2.163 15.584 2.175 16.85 2.233C20.102 2.381 21.621 3.924 21.769 7.152C21.827 8.417 21.838 8.797 21.838 12.001C21.838 15.206 21.826 15.585 21.769 16.85C21.62 20.075 20.105 21.621 16.85 21.769C15.584 21.827 15.206 21.839 12 21.839C8.796 21.839 8.416 21.827 7.151 21.769C3.891 21.62 2.38 20.07 2.232 16.849C2.174 15.584 2.162 15.205 2.162 12C2.162 8.796 2.175 8.417 2.232 7.151C2.381 3.924 3.896 2.38 7.151 2.232C8.417 2.175 8.796 2.163 12 2.163ZM5.838 12C5.838 8.597 8.597 5.838 12 5.838C15.403 5.838 18.162 8.597 18.162 12C18.162 15.404 15.403 18.163 12 18.163C8.597 18.163 5.838 15.403 5.838 12ZM12 16C9.791 16 8 14.21 8 12C8 9.791 9.791 8 12 8C14.209 8 16 9.791 16 12C16 14.21 14.209 16 12 16ZM16.965 5.595C16.965 4.8 17.61 4.155 18.406 4.155C19.201 4.155 19.845 4.8 19.845 5.595C19.845 6.39 19.201 7.035 18.406 7.035C17.61 7.035 16.965 6.39 16.965 5.595Z"
             fill="currentColor"
           />
@@ -66,42 +95,17 @@ export default function TimeBlock() {
       link: "https://www.instagram.com/"
     }
   ];
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime((prev) => {
-        let { days, hours, minutes, seconds } = prev;
-
-        if (seconds > 0) {
-          seconds--;
-        } else if (minutes > 0) {
-          minutes--;
-          seconds = 59;
-        } else if (hours > 0) {
-          hours--;
-          minutes = 59;
-          seconds = 59;
-        } else if (days > 0) {
-          days--;
-          hours = 23;
-          minutes = 59;
-          seconds = 59;
-        }
-
-        return { days, hours, minutes, seconds };
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const TimeBox = ({ value, label }: { value: number; label: string }) => (
-    <div className="flex flex-col items-center">
-      <div className="bg-slate-800 bg-opacity-60 backdrop-blur-sm rounded-lg  min-w-[100px] shadow-xl">
-        <div className="text-5xl font-bold text-pink-400">
-          {String(value).padStart(2, "0")}
+    <div className="flex flex-col items-center sm:h-[184px] h-[92px]">
+      <div className="bg-[#191A23] pb-1 sm:pb-2.5 rounded-lg sm:w-[150px] w-[70px]">
+        <div className="bg-[#343650] rounded-lg  sm:px-[22.5px] sm:pt-[34px ] sm:pb-[35px] px-[11px] pt-[14px ] pb-[15px]">
+          <h1 className=" sm:text-[80px] text-[36px] font-bold text-red-400 ">
+            {String(value).padStart(2, "0")}
+          </h1>
         </div>
       </div>
-      <div className="text-slate-400 text-xs uppercase tracking-widest mt-3">
+      <div className="text-[#8385A9] text-[7px] sm:text-[14px] font-bold uppercase tracking-widest mt-3">
         {label}
       </div>
     </div>
@@ -144,11 +148,11 @@ export default function TimeBlock() {
 
       {/* Main content */}
       <div className="relative z-10 text-center px-4">
-        <h1 className="text-white text-sm uppercase tracking-[0.3em] mb-12">
-          We're Launching Soon
+        <h1 className="text-white text-[18px] sm:text-[22px] font-bold uppercase tracking-[0.3em] mb-12">
+          Time remaining until 2026
         </h1>
 
-        <div className="flex gap-6 justify-center mb-16">
+        <div className="flex sm:gap-8 gap-4 justify-center mt-[54px] mb-[163px] sm:mt-[104px] sm:mb-[151px]">
           <TimeBox value={time.days} label="Days" />
           <TimeBox value={time.hours} label="Hours" />
           <TimeBox value={time.minutes} label="Minutes" />
@@ -162,7 +166,7 @@ export default function TimeBlock() {
               key={index}
               href={icon.link}
               target="_blank"
-              className="text-green-400 hover:text-pink-400 transition-all duration-300 cursor-pointer hover:scale-110"
+              className="text-[#8385A9] hover:text-pink-400 transition-all duration-300 cursor-pointer hover:scale-110"
             >
               {icon.icon}
             </a>
